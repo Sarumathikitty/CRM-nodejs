@@ -19,12 +19,9 @@ app.use(cors());
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log("your app is running in", port));
 
-
 app.get("/", (req, res) => {
   res.send("<h1>Simple GET & POST request app..! </h1>");
 });
-
-
 
 app.post("/register", (req, res) => {
   mongoClient.connect(dbURL, (err, client) => {
@@ -54,35 +51,125 @@ app.post("/register", (req, res) => {
 app.post("/login", (req, res) => {
   mongoClient.connect(dbURL, (err, client) => {
     if (err) throw err;
-    client
-      .db("crm")
-      .collection("users")
-      .findOne({ email: req.body.email }, (err, data) => {
-        if (err) throw err;
-        if (data) {
-          bcrypt.compare(req.body.password, data.password, (err, validUser) => {
-            if (err) throw err;
-            if (validUser) {
-              jwt.sign(
-                { userId: data._id, email: data.email },
-                "uzKfyTDx4v5z6NSV",
-                { expiresIn: "1h" },
-                (err, token) => {
-                  res.status(200).json({ message: "Login success..!!", token });
+    if (req.body.type === "admin") {
+      client
+        .db("crm")
+        .collection("admin")
+        .findOne({ email: req.body.email }, (err, data) => {
+          if (err) throw err;
+          if (data) {
+            bcrypt.compare(
+              req.body.password,
+              data.password,
+              (err, validUser) => {
+                if (err) throw err;
+                if (validUser) {
+                  jwt.sign(
+                    { userId: data._id, email: data.email },
+                    "uzKfyTDx4v5z6NSV",
+                    { expiresIn: "1h" },
+                    (err, token) => {
+                      res
+                        .status(200)
+                        .json({ message: "Login success..!!", token });
+                    }
+                  );
+                } else {
+                  res
+                    .status(403)
+                    .json({
+                      message: "Bad Credentials, Login unsuccessful..!!",
+                    });
                 }
-              );
-            } else {
-              res
-                .status(403)
-                .json({ message: "Bad Credentials, Login unsuccessful..!!" });
-            }
-          });
-        } else {
-          res.status(401).json({
-            message: "Email is not registered, Kindly register..!!",
-          });
-        }
-      });
+              }
+            );
+          } else {
+            res.status(401).json({
+              message: "Email is not registered, Kindly register..!!",
+            });
+          }
+        });
+    } else if (req.body.type === "manager") {
+      client
+        .db("crm")
+        .collection("manager")
+        .findOne({ email: req.body.email }, (err, data) => {
+          if (err) throw err;
+          if (data) {
+            bcrypt.compare(
+              req.body.password,
+              data.password,
+              (err, validUser) => {
+                if (err) throw err;
+                if (validUser) {
+                  token = jwt.sign(
+                    {
+                      type: data.type,
+                      email: data.email,
+                      approve: data.Approve,
+                    },
+                    "uzKfyTDx4v5z6NSV",
+                    { expiresIn: "1h" }
+                  );
+                  res.cookie("managerjwt", token);
+                  res.status(200).json({
+                    message: "login successful!!",
+                    token,
+                  });
+                } else {
+                  res
+                    .status(403)
+                    .json({
+                      message: "Bad Credentials, Login unsuccessful..!!",
+                    });
+                }
+              }
+            );
+          } else {
+            res.status(401).json({
+              message: "Email is not registered, Kindly register..!!",
+            });
+          }
+        });
+    } else if (req.body.type === "employee") {
+      client
+        .db("crm")
+        .collection("employee")
+        .findOne({ email: req.body.email }, (err, data) => {
+          if (err) throw err;
+          if (data) {
+            bcrypt.compare(
+              req.body.password,
+              data.password,
+              (err, validUser) => {
+                if (err) throw err;
+                if (validUser) {
+                  token = jwt.sign(
+                    { employeetype: data.employeetype, email: data.email },
+                    "uzKfyTDx4v5z6NSV",
+                    { expiresIn: "1h" }
+                  );
+                  res.cookie("employeejwt", token);
+                  res.status(200).json({
+                    message: "login successful!!",
+                    token,
+                  });
+                } else {
+                  res
+                    .status(403)
+                    .json({
+                      message: "Bad Credentials, Login unsuccessful..!!",
+                    });
+                }
+              }
+            );
+          } else {
+            res.status(401).json({
+              message: "Email is not registered, Kindly register..!!",
+            });
+          }
+        });
+    }
   });
 });
 
