@@ -27,24 +27,59 @@ app.post("/register", (req, res) => {
   mongoClient.connect(dbURL, (err, client) => {
     if (err) throw err;
     let db = client.db("crm");
-    db.collection("users").findOne({ email: req.body.email }, (err, data) => {
-      if (err) throw err;
-      if (data) {
-        res.status(400).json({ message: "Email already exists..!!" });
-      } else {
-        bcrypt.genSalt(10, (err, salt) => {
-          bcrypt.hash(req.body.password, salt, (err, cryptPassword) => {
-            if (err) throw err;
-            req.body.password = cryptPassword;
-            db.collection("users").insertOne(req.body, (err, result) => {
-              if (err) throw err;
-              client.close();
-              res.status(200).json({ message: "Registration successful..!! " });
+    if (req.body.type === "employ") {
+      db.collection("employ").findOne(
+        { email: req.body.email },
+        (err, data) => {
+          if (err) throw err;
+          if (data) {
+            res.status(400).json({ message: "Email already exists..!!" });
+          } else {
+            bcrypt.genSalt(10, (err, salt) => {
+              bcrypt.hash(req.body.password, salt, (err, cryptPassword) => {
+                if (err) throw err;
+                req.body.password = cryptPassword;
+                db.collection("users").insertOne(req.body, (err, result) => {
+                  if (err) throw err;
+                  client.close();
+                  res
+                    .status(200)
+                    .json({ message: "Registration successful..!! " });
+                });
+              });
             });
-          });
-        });
-      }
-    });
+          }
+        }
+      );
+    } else if (req.body.type === "manager") {
+      db.collection("manager").findOne(
+        { email: req.body.email },
+        (err, data) => {
+          if (err) throw err;
+          if (data) {
+            res.status(400).json({ message: "Email already exists..!!" });
+          } else {
+            bcrypt.genSalt(10, (err, salt) => {
+              bcrypt.hash(req.body.password, salt, (err, cryptPassword) => {
+                if (err) throw err;
+                req.body.password = cryptPassword;
+                db.collection("manager").insertOne(req.body, (err, result) => {
+                  if (err) throw err;
+                  client.close();
+                  res
+                    .status(200)
+                    .json({ message: "Registration successful..!! " });
+                });
+              });
+            });
+          }
+        }
+      );
+    } else {
+      res.status(401).json({
+        message: "give valid details",
+      });
+    }
   });
 });
 
@@ -75,11 +110,9 @@ app.post("/login", (req, res) => {
                     }
                   );
                 } else {
-                  res
-                    .status(403)
-                    .json({
-                      message: "Bad Credentials, Login unsuccessful..!!",
-                    });
+                  res.status(403).json({
+                    message: "Bad Credentials, Login unsuccessful..!!",
+                  });
                 }
               }
             );
@@ -117,11 +150,9 @@ app.post("/login", (req, res) => {
                     token,
                   });
                 } else {
-                  res
-                    .status(403)
-                    .json({
-                      message: "Bad Credentials, Login unsuccessful..!!",
-                    });
+                  res.status(403).json({
+                    message: "Bad Credentials, Login unsuccessful..!!",
+                  });
                 }
               }
             );
@@ -131,10 +162,10 @@ app.post("/login", (req, res) => {
             });
           }
         });
-    } else if (req.body.type === "employee") {
+    } else if (req.body.type === "employ") {
       client
         .db("crm")
-        .collection("employee")
+        .collection("employ")
         .findOne({ email: req.body.email }, (err, data) => {
           if (err) throw err;
           if (data) {
@@ -155,11 +186,9 @@ app.post("/login", (req, res) => {
                     token,
                   });
                 } else {
-                  res
-                    .status(403)
-                    .json({
-                      message: "Bad Credentials, Login unsuccessful..!!",
-                    });
+                  res.status(403).json({
+                    message: "Bad Credentials, Login unsuccessful..!!",
+                  });
                 }
               }
             );
@@ -199,3 +228,4 @@ function authenticatedUsers(req, res, next) {
     );
   }
 }
+
